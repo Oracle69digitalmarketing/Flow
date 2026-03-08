@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Repository Name: flow-sales-assistant
 
-# Run and deploy your AI Studio app
+## Description (short field):
+AI sales assistant unifying WhatsApp, Slack, and browser with cross-platform memory and CRM integration.
 
-This contains everything you need to run your app locally.
+## README.md Header:
+🚀 Flow - AI Sales Assistant for Enterprise Teams
 
-View your app in AI Studio: https://ai.studio/apps/3ebc1f67-405a-44e7-841f-88a1707f0e86
+Flow is an AI-powered sales assistant that helps account executives win deals by providing contextual intelligence across WhatsApp, Slack, and browser extensions. Eliminate context-switching with cross-platform memory, real-time CRM integration, and automated workflows.
 
-## Run Locally
+Built for the Airia AI Agents Hackathon (Track 1: Airia Everywhere)
 
-**Prerequisites:**  Node.js
+## Key Features:
+- 🤖 WhatsApp Integration - Deal updates and insights on mobile
+- 💼 Slack Bot - Rich team collaboration with interactive buttons
+- 🌐 Browser Extension - Competitor tracking and instant insights
+- 📊 HubSpot CRM - Real-time deal data synchronization
+- 🔄 Cross-Platform Memory - Conversations persist across all platforms
+- ⚡ Custom API Workflows - Automate complex sales processes
 
+## Tech Stack:
+- Backend: Python FastAPI, PostgreSQL, Redis
+- AI Orchestration: Airia AI Agents
+- Integrations: WhatsApp Business API, Slack Bolt, HubSpot API
+- Frontend: Browser Extension (Vanilla JS)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Status:
+🏗️ In development for Airia AI Agents Hackathon (Deadline: March 20, 2026)
