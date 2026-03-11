@@ -34,7 +34,7 @@ async def read_root():
     """
     return {"status": "ok", "message": "Flow Orchestrator is running"}
 
-@app.post("/webhooks/slack", tags=["Webhooks"])
+@app.post("/slack/events", tags=["Webhooks"])
 async def webhook_slack(request: Request):
     """
     Handles incoming events from Slack.
