@@ -1,1 +1,16 @@
+# Core web framework
 fastapi
+pydantic
+
+# Database
+sqlalchemy
+redis
+alembic
+
+# APIs and external services
+httpx
+airia
+hubspot-api-client
+
+# Utilities
+python-dotenv
