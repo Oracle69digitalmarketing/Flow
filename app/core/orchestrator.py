@@ -1,4 +1,4 @@
-from app.core.airia_client import airia_client
+
 from typing import Dict, Optional
 
 class Orchestrator:
@@ -7,10 +7,11 @@ class Orchestrator:
     Routes messages, aggregates context, and executes actions.
     """
     
-    def __init__(self):
+    def __init__(self, airia_client):
         # In the future, we will initialize the ContextAggregator and ActionExecutor here
         # self.context_aggregator = ContextAggregator()
         # self.action_executor = ActionExecutor()
+        self.airia_client = airia_client
         print("Orchestrator initialized.")
         
     async def process_message(
@@ -37,7 +38,7 @@ class Orchestrator:
         }
         
         # 3. Call Airia pipeline
-        airia_response = await airia_client.process_message(
+        airia_response = await self.airia_client.process_message(
             message=message_text,
             user_id=user_id,
             platform=platform,
@@ -52,6 +53,3 @@ class Orchestrator:
         # For now, we return the raw response from Airia
         return airia_response
 
-
-# Singleton instance
-orchestrator = Orchestrator()

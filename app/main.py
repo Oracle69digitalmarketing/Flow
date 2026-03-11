@@ -1,12 +1,30 @@
 from fastapi import FastAPI, Request, HTTPException
-from app.core.orchestrator import orchestrator
 from app.config import settings
 import httpx
+from contextlib import asynccontextmanager
+
+from app.core.airia_client import AiriaClient
+from app.core.orchestrator import Orchestrator
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize clients on startup
+    print("Initializing clients...")
+    airia_client = AiriaClient()
+    orchestrator = Orchestrator(airia_client=airia_client)
+    app.state.airia_client = airia_client
+    app.state.orchestrator = orchestrator
+    print("Clients initialized.")
+    yield
+    # Clean up clients on shutdown (optional)
+    print("Cleaning up clients...")
+
 
 app = FastAPI(
     title="Flow - AI Sales Assistant",
     description="Orchestrator service for the Flow AI agent across multiple platforms.",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 @app.get("/", tags=["Health Check"])
@@ -21,6 +39,8 @@ async def webhook_slack(request: Request):
     """
     Handles incoming events from Slack.
     """
+    orchestrator = request.app.state.orchestrator
+
     body = await request.json()
     event_type = body.get("type")
 

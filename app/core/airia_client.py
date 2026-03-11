@@ -58,6 +58,3 @@ class AiriaClient:
         # We assume it returns a dict-like object.
         return response
 
-
-# Singleton instance
-airia_client = AiriaClient()
