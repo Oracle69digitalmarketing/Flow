@@ -9,7 +9,7 @@ alembic
 
 # APIs and external services
 httpx
-airia
+airia==0.1.11
 hubspot-api-client
 
 # Utilities
