@@ -18,8 +18,6 @@ class AiriaClientWrapper:
         if not self.api_endpoint:
             raise ValueError("AIRIA_API_ENDPOINT environment variable not set")
         
-        # You might not need API key if using unauthenticated webhook
-        # But if you added authentication later, include it
     
     async def process_message(
         self, 
@@ -34,10 +32,10 @@ class AiriaClientWrapper:
         """
         # Prepare the payload based on what your agent expects
         payload = {
-            "message": user_message,
-            "user_id": user_id,
-            "platform": platform,
-            "conversation_id": conversation_id
+            "userInput": user_message,
+            "asyncOutput": False,
+            "userId": user_id,
+            "conversationId": conversation_id
         }
         
         # Add any additional context
@@ -49,9 +47,9 @@ class AiriaClientWrapper:
             "Content-Type": "application/json"
         }
         
-        # Add API key if you have one (for authenticated webhooks)
+        # Add API key if you have one
         if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["X-API-KEY"] = self.api_key
         
         try:
             # Make the request to Airia webhook
@@ -70,7 +68,7 @@ class AiriaClientWrapper:
                 
                 # Extract the agent's response text
                 # The exact structure depends on your webhook response format
-                agent_response = result.get("response") or result.get("text") or result.get("message") or str(result)
+                agent_response = result.get("output") or result.get("response") or result.get("text") or result.get("message") or str(result)
                 
                 return {
                     "text": agent_response,
