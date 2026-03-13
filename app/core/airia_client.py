@@ -1,65 +1,95 @@
-from airia import AiriaAsyncClient
-from app.config import settings
+# app/core/airia_client.py
 
+import os
+import httpx
+import json
+from typing import Dict, Optional
 
-class AiriaClient:
+class AiriaClientWrapper:
     """
-    Client for interacting with our Flow agent on Airia.
+    Client for calling the published Airia agent via webhook/API endpoint.
     """
-
+    
     def __init__(self):
-        if not settings.AIRIA_API_KEY:
-            raise ValueError("AIRIA_API_KEY is not set. Please check your .env file.")
-
-        self.client = AiriaAsyncClient(api_key=settings.AIRIA_API_KEY)
-        self.pipeline_id = settings.AIRIA_PIPELINE_ID
-        print(f"AiriaClient initialized for pipeline: {self.pipeline_id}")
-
+        # Get credentials from environment variables
+        self.api_endpoint = os.getenv("AIRIA_API_ENDPOINT")
+        self.api_key = os.getenv("AIRIA_API_KEY")
+        
+        if not self.api_endpoint:
+            raise ValueError("AIRIA_API_ENDPOINT environment variable not set")
+        
+        # You might not need API key if using unauthenticated webhook
+        # But if you added authentication later, include it
+    
     async def process_message(
-        self,
-        message: str,
-        user_id: str,
-        platform: str,
-        context: dict,
-    ) -> dict:
+        self, 
+        user_message: str, 
+        user_id: str = None,
+        platform: str = "slack",
+        conversation_id: str = None,
+        additional_context: Dict = None
+    ) -> Dict:
         """
-        Send message to the Airia pipeline with full context.
-
-        Args:
-            message: The user's message.
-            user_id: The internal ID of the user.
-            platform: The platform the message originated from (e.g., 'slack', 'whatsapp').
-            context: The aggregated context for the user.
-
-        Returns:
-            The response from the Airia pipeline.
+        Send message to Airia agent via webhook endpoint.
         """
-        print(f"Executing Airia pipeline '{self.pipeline_id}' for user '{user_id}'")
-
+        # Prepare the payload based on what your agent expects
+        payload = {
+            "message": user_message,
+            "user_id": user_id,
+            "platform": platform,
+            "conversation_id": conversation_id
+        }
+        
+        # Add any additional context
+        if additional_context:
+            payload.update(additional_context)
+        
+        # Prepare headers
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        # Add API key if you have one (for authenticated webhooks)
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        
         try:
-            # Correct method: execute_pipeline()
-            # Note: not all original context parameters are supported by this method.
-            response = await self.client.execute_pipeline(
-                pipeline_id=self.pipeline_id,
-                user_input=message,
-                user_id=user_id,
-            )
-
-            print("Received response from Airia pipeline.")
-            # Return structured response
+            # Make the request to Airia webhook
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    self.api_endpoint,
+                    json=payload,
+                    headers=headers
+                )
+                
+                # Check for errors
+                response.raise_for_status()
+                
+                # Parse response
+                result = response.json()
+                
+                # Extract the agent's response text
+                # The exact structure depends on your webhook response format
+                agent_response = result.get("response") or result.get("text") or result.get("message") or str(result)
+                
+                return {
+                    "text": agent_response,
+                    "tool_calls": [],  # Add if your agent returns tool calls
+                    "raw_response": result
+                }
+                
+        except httpx.TimeoutException:
             return {
-                "text": response.result if hasattr(response, "result") else str(response),
-                "tool_calls": [],  # Parse tool calls if your pipeline uses them
-                "finish_reason": "stop",
+                "text": "I'm sorry, the request timed out. Please try again.",
+                "error": "timeout"
             }
-
+        except httpx.HTTPStatusError as e:
+            return {
+                "text": f"I'm having trouble connecting to my AI service. Error: {e.response.status_code}",
+                "error": str(e)
+            }
         except Exception as e:
-            # Log the error
-            print(f"Airia API error: {str(e)}")
-            # Return a fallback response
             return {
-                "text": "I'm having trouble connecting to my AI service right now. Please try again later.",
-                "tool_calls": [],
-                "error": str(e),
+                "text": "I encountered an error. Please try again later.",
+                "error": str(e)
             }
-
