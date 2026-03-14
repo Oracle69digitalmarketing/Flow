@@ -44,7 +44,7 @@ class AiriaClientWrapper:
         if additional_context:
             payload.update(additional_context)
 
-        print(f"Sending payload: {payload}")
+        print(f"Sending payload: {payload}", flush=True)
         
         # Prepare headers
         headers = {
