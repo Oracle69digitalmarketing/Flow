@@ -82,7 +82,7 @@ class AiriaClientWrapper:
                 
                 # Parse successful response
                 result = response.json()
-                agent_response = result.get("output") or result.get("response") or result.get("text") or result.get("message") or str(result)
+                agent_response = result.get('result', 'Sorry, I could not process the response.')
                 
                 logger.info(f"Successfully got response from Airia")
                 
