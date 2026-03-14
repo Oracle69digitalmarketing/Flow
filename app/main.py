@@ -2,12 +2,15 @@ from fastapi import FastAPI, Request, HTTPException
 from app.config import settings
 import httpx
 from contextlib import asynccontextmanager
+import logging
 
 from app.core.airia_client import AiriaClientWrapper as AiriaClient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
     # Initialize clients on startup
     print("Initializing clients...")
     airia_client = AiriaClient()

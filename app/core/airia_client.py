@@ -32,16 +32,13 @@ class AiriaClientWrapper:
         """
         Send message to Airia agent via webhook endpoint.
         """
-        # Prepare the payload
+        # Prepare the payload - sending only the minimal confirmed working format
         payload = {
             "userInput": user_message,
             "asyncOutput": False
         }
-        if user_id:
-            payload['userId'] = user_id
-        if conversation_id:
-            payload['conversationId'] = conversation_id
-        
+        # Temporarily removed userId and conversationId for debugging
+
         if additional_context:
             payload.update(additional_context)
 
