@@ -32,7 +32,7 @@ class AiriaClientWrapper:
         """
         # Prepare the payload based on what your agent expects
         payload = {
-            "userInput": user_message,
+            "input": user_message,
             "asyncOutput": False,
             "userId": user_id,
             "conversationId": conversation_id
@@ -41,6 +41,8 @@ class AiriaClientWrapper:
         # Add any additional context
         if additional_context:
             payload.update(additional_context)
+
+        print(f"Sending payload: {payload}")
         
         # Prepare headers
         headers = {
