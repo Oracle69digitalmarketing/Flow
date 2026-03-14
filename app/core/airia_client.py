@@ -3,7 +3,11 @@
 import os
 import httpx
 import json
+import logging
 from typing import Dict, Optional
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 class AiriaClientWrapper:
     """
@@ -11,13 +15,11 @@ class AiriaClientWrapper:
     """
     
     def __init__(self):
-        # Get credentials from environment variables
         self.api_endpoint = os.getenv("AIRIA_API_ENDPOINT")
         self.api_key = os.getenv("AIRIA_API_KEY")
         
-        if not self.api_endpoint:
-            raise ValueError("AIRIA_API_ENDPOINT environment variable not set")
-        
+        logger.info(f"AiriaClient initialized with endpoint: {self.api_endpoint}")
+        logger.info(f"API Key present: {'Yes' if self.api_key else 'No'}")
     
     async def process_message(
         self, 
@@ -30,67 +32,77 @@ class AiriaClientWrapper:
         """
         Send message to Airia agent via webhook endpoint.
         """
-        # Prepare the payload based on what your agent expects
+        # Prepare the payload
         payload = {
             "userInput": user_message,
-            "asyncOutput": False,
+            "asyncOutput": False
         }
         if user_id:
-            payload["userId"] = user_id
+            payload['userId'] = user_id
         if conversation_id:
-            payload["conversationId"] = conversation_id
+            payload['conversationId'] = conversation_id
         
-        # Add any additional context
         if additional_context:
             payload.update(additional_context)
 
-        print(f"Sending payload: {payload}", flush=True)
+        logger.info(f"Sending payload to Airia: {json.dumps(payload)}")
         
-        # Prepare headers
         headers = {
+            "X-API-KEY": self.api_key,
             "Content-Type": "application/json"
         }
         
-        # Add API key if you have one
-        if self.api_key:
-            headers["X-API-KEY"] = self.api_key
-        
         try:
-            # Make the request to Airia webhook
             async with httpx.AsyncClient(timeout=30.0) as client:
+                logger.info(f"Making POST request to: {self.api_endpoint}")
+                
                 response = await client.post(
                     self.api_endpoint,
                     json=payload,
                     headers=headers
                 )
                 
+                logger.info(f"Response status code: {response.status_code}")
+                
+                # Try to get response body for debugging
+                try:
+                    response_body = response.json()
+                    logger.info(f"Response body: {json.dumps(response_body)}")
+                except:
+                    response_text = response.text
+                    logger.info(f"Response text: {response_text}")
+                
                 # Check for errors
-                response.raise_for_status()
+                if response.status_code >= 400:
+                    error_msg = f"Airia API error: {response.status_code}"
+                    logger.error(error_msg)
+                    
+                    return {
+                        "text": f"I'm having trouble connecting to my AI service. Error: {response.status_code}",
+                        "error": error_msg,
+                        "details": response_body if 'response_body' in locals() else response_text
+                    }
                 
-                # Parse response
+                # Parse successful response
                 result = response.json()
-                
-                # Extract the agent's response text
-                # The exact structure depends on your webhook response format
                 agent_response = result.get("output") or result.get("response") or result.get("text") or result.get("message") or str(result)
+                
+                logger.info(f"Successfully got response from Airia")
                 
                 return {
                     "text": agent_response,
-                    "tool_calls": [],  # Add if your agent returns tool calls
+                    "tool_calls": [],
                     "raw_response": result
                 }
                 
-        except httpx.TimeoutException:
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout error: {str(e)}")
             return {
                 "text": "I'm sorry, the request timed out. Please try again.",
                 "error": "timeout"
             }
-        except httpx.HTTPStatusError as e:
-            return {
-                "text": f"I'm having trouble connecting to my AI service. Error: {e.response.status_code}",
-                "error": str(e)
-            }
         except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             return {
                 "text": "I encountered an error. Please try again later.",
                 "error": str(e)
