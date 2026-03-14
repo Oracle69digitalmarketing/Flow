@@ -1,62 +1,79 @@
-/**
- * FLOW Browser Extension - Background Script
- */
+// background.js
+const API_BASE_URL = 'https://flow-rust-two.vercel.app'; // Your Vercel URL
 
-const API_BASE = 'https://ais-dev-rlp4mi36mfpglv35hnby4z-94089556651.europe-west1.run.app'; // This will be updated dynamically in a real build
-
+// Listen for extension installation
 chrome.runtime.onInstalled.addListener(() => {
+  console.log('Flow extension installed');
+  
+  // Create context menu
   chrome.contextMenus.create({
     id: 'ask-flow',
     title: 'Ask Flow about this',
-    contexts: ['selection', 'link', 'page']
+    contexts: ['page', 'selection', 'link']
   });
 });
 
+// Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'ask-flow') {
     const selectedText = info.selectionText || info.linkUrl || info.pageUrl;
-    // In a real extension, this would open a popup or inject a content script
-    console.log('Flow Query:', selectedText);
-  }
-});
-
-// Listen for messages from content scripts
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'queryFlow') {
-    fetch(`${API_BASE}/api/ai/query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: request.query,
-        userId: 'user_1',
-        platform: 'browser_extension'
-      })
-    })
-    .then(res => res.json())
-    .then(data => sendResponse(data))
-    .catch(err => {
-      console.error('Flow query failed', err);
-      sendResponse({ error: 'Failed to reach Flow' });
-    });
     
-    return true; // Keep message channel open for async response
-  }
-});
-
-// Track page visits
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url) {
-    const isCompetitor = tab.url.includes('competitor') || tab.url.includes('g2.com');
-    
-    fetch(`${API_BASE}/api/browser/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    // Store the selection and open popup
+    chrome.storage.local.set({ 
+      pendingQuery: {
+        text: selectedText,
         url: tab.url,
-        title: tab.title,
-        isCompetitor,
-        userId: 'user_1'
-      })
-    }).catch(err => console.error('Flow tracking failed', err));
+        title: tab.title
+      }
+    }, () => {
+      chrome.action.openPopup();
+    });
   }
 });
+
+// Listen for messages from content script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'PAGE_ANALYSIS') {
+    // Send page data to your backend
+    analyzePage(request.data, sender.tab.id);
+    sendResponse({ received: true });
+  }
+  return true;
+});
+
+// Function to send page data to backend
+async function analyzePage(pageData, tabId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/analyze-page`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'your-api-key' // Store securely
+      },
+      body: JSON.stringify({
+        url: pageData.url,
+        title: pageData.title,
+        content: pageData.content,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    const result = await response.json();
+    
+    // Show notification if competitor detected
+    if (result.isCompetitor) {
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon48.png',
+        title: 'Competitor Detected',
+        message: `Flow detected ${result.competitorName}. Click for insights.`,
+        priority: 2
+      });
+      
+      // Store competitor data
+      chrome.storage.local.set({ lastCompetitor: result });
+    }
+  } catch (error) {
+    console.error('Error analyzing page:', error);
+  }
+}
