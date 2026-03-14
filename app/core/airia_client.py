@@ -34,13 +34,17 @@ class AiriaClientWrapper:
         payload = {
             "userInput": user_message,
             "asyncOutput": False,
-            "userId": user_id,
-            "conversationId": conversation_id
         }
+        if user_id:
+            payload["userId"] = user_id
+        if conversation_id:
+            payload["conversationId"] = conversation_id
         
         # Add any additional context
         if additional_context:
             payload.update(additional_context)
+
+        print(f"Sending payload: {payload}")
         
         # Prepare headers
         headers = {
