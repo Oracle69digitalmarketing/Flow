@@ -25,5 +25,6 @@ class Settings:
     # WhatsApp
     WHATSAPP_VERIFY_TOKEN: str = os.getenv("WHATSAPP_VERIFY_TOKEN", "your-verify-token")
     WHATSAPP_TOKEN: str = os.getenv("WHATSAPP_TOKEN")
+    WHATSAPP_PHONE_NUMBER_ID: str = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 
 settings = Settings()

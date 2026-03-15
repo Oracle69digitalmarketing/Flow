@@ -90,6 +90,29 @@ async def webhook_slack(request: Request):
     return {"ok": True}
 
 
+async def send_whatsapp_message(to_number: str, text: str):
+    """Send message via WhatsApp API"""
+    url = f"https://graph.facebook.com/v18.0/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages"
+    
+    headers = {
+        "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to_number,
+        "type": "text",
+        "text": {"body": text}
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+
+
 @app.get("/whatsapp/webhook", tags=["Webhooks"])
 async def webhook_whatsapp_verify(request: Request):
     """
@@ -103,5 +126,35 @@ async def webhook_whatsapp_verify(request: Request):
 
 @app.post("/whatsapp/webhook", tags=["Webhooks"])
 async def webhook_whatsapp(request: Request):
-    # ... logic to handle whatsapp events
-    return {"status": "ok"}
+    """Handle incoming WhatsApp messages"""
+    airia_client = request.app.state.airia_client
+    body = await request.json()
+    
+    # Extract message details
+    try:
+        entry = body.get("entry", [{}])[0]
+        changes = entry.get("changes", [{}])[0]
+        value = changes.get("value", {})
+        messages = value.get("messages", [])
+        
+        if messages:
+            message = messages[0]
+            from_number = message.get("from")
+            text = message.get("text", {}).get("body", "")
+            
+            response = await airia_client.process_message(
+                user_message=text,
+                user_id=from_number,
+                platform="whatsapp",
+                conversation_id=from_number
+            )
+            
+            # Send response via WhatsApp API
+            await send_whatsapp_message(from_number, response.get("text", "Sorry, I had trouble processing that."))
+            
+        return {"status": "ok"}
+        
+    except Exception as e:
+        logging.error(f"WhatsApp webhook error: {e}")
+        return {"status": "error"}, 500
+
