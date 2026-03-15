@@ -90,7 +90,18 @@ async def webhook_slack(request: Request):
     return {"ok": True}
 
 
-# @app.post("/webhooks/whatsapp")
-# async def webhook_whatsapp(request: Request):
-#     # ... logic to handle whatsapp events
-#     return {"status": "ok"}
+@app.get("/whatsapp/webhook", tags=["Webhooks"])
+async def webhook_whatsapp_verify(request: Request):
+    """
+    Handles WhatsApp's webhook verification challenge.
+    """
+    if request.query_params.get("hub.mode") == "subscribe" and request.query_params.get("hub.verify_token") == settings.WHATSAPP_VERIFY_TOKEN:
+        return int(request.query_params.get("hub.challenge"))
+    else:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+
+@app.post("/whatsapp/webhook", tags=["Webhooks"])
+async def webhook_whatsapp(request: Request):
+    # ... logic to handle whatsapp events
+    return {"status": "ok"}
