@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.core.airia_client import AiriaClientWrapper as AiriaClient
+from app.core.orchestrator import orchestrator
 
 
 @asynccontextmanager
@@ -157,4 +158,46 @@ async def webhook_whatsapp(request: Request):
     except Exception as e:
         logging.error(f"WhatsApp webhook error: {e}")
         return {"status": "error"}, 500
+
+@app.post("/api/competitor/detect")
+async def detect_competitor(request: Request):
+    data = await request.json()
+    url = data.get("url", "")
+    
+    # Simple competitor detection logic
+    competitors = ["hubspot", "salesforce", "zoho", "asana", "monday"]
+    detected = any(comp in url.lower() for comp in competitors)
+    
+    return {
+        "status": "ok",
+        "is_competitor": detected,
+        "competitor_name": next((c for c in competitors if c in url.lower()), None),
+        "insights": "This is a competitor website. Would you like a battlecard?"
+    }
+
+@app.post("/api/browser/analyze")
+async def analyze_browser(request: Request):
+    data = await request.json()
+    print(f"Browser data received: {data}")
+    
+    return {
+        "status": "ok",
+        "message": "Page analyzed successfully",
+        "data": data
+    }
+
+@app.post("/api/query")
+async def handle_query(request: Request):
+    data = await request.json()
+    query = data.get("query", "")
+    user_id = data.get("user_id", "")
+    
+    # Forward to your Airia agent
+    response = await orchestrator.process_message(
+        user_message=query,
+        user_id=user_id,
+        platform="browser"
+    )
+    
+    return response
 
