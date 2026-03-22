@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from app.core.airia_client import AiriaClientWrapper as AiriaClient
-from app.core.orchestrator import orchestrator
+from app.core.orchestrator import Orchestrator
 
 
 @asynccontextmanager
@@ -16,6 +16,8 @@ async def lifespan(app: FastAPI):
     print("Initializing clients...")
     airia_client = AiriaClient()
     app.state.airia_client = airia_client
+    orchestrator = Orchestrator(airia_client)
+    app.state.orchestrator = orchestrator
     print("Clients initialized.")
     yield
     # Clean up clients on shutdown (optional)
@@ -192,11 +194,12 @@ async def handle_query(request: Request):
     query = data.get("query", "")
     user_id = data.get("user_id", "")
     
+    orchestrator = request.app.state.orchestrator
     # Forward to your Airia agent
     response = await orchestrator.process_message(
-        user_message=query,
-        user_id=user_id,
-        platform="browser"
+        platform="browser",
+        platform_user_id=user_id,
+        message_text=query
     )
     
     return response
