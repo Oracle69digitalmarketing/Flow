@@ -1,10 +1,11 @@
 # app/core/airia_client.py
 
-import os
 import httpx
 import json
 import logging
 from typing import Dict, Optional
+
+from app.config import settings
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -15,15 +16,15 @@ class AiriaClientWrapper:
     """
     
     def __init__(self):
-        self.api_endpoint = os.getenv("AIRIA_API_ENDPOINT")
-        self.api_key = os.getenv("AIRIA_API_KEY")
+        self.api_endpoint = settings.AIRIA_API_URL
+        self.api_key = settings.AIRIA_API_KEY
         
         logger.info(f"AiriaClient initialized with endpoint: {self.api_endpoint}")
         logger.info(f"API Key present: {'Yes' if self.api_key else 'No'}")
     
     async def process_message(
         self, 
-        user_message: str, 
+        message: str, 
         user_id: str = None,
         platform: str = "slack",
         conversation_id: str = None,
@@ -34,7 +35,7 @@ class AiriaClientWrapper:
         """
         # Prepare the payload - sending only the minimal confirmed working format
         payload = {
-            "userInput": user_message,
+            "userInput": message,
             "asyncOutput": False
         }
         # Temporarily removed userId and conversationId for debugging

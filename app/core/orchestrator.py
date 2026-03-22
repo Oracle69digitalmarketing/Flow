@@ -42,7 +42,7 @@ class Orchestrator:
             message=message_text,
             user_id=user_id,
             platform=platform,
-            context=context
+            additional_context=context
         )
         
         # 4. Execute tool calls (to be implemented)
