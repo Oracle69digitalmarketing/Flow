@@ -16,7 +16,7 @@ class AiriaClientWrapper:
     """
     
     def __init__(self):
-        self.api_endpoint = settings.AIRIA_API_URL
+        self.api_endpoint = settings.API_BASE_URL
         self.api_key = settings.AIRIA_API_KEY
         
         logger.info(f"AiriaClient initialized with endpoint: {self.api_endpoint}")

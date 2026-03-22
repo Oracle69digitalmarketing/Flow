@@ -71,7 +71,7 @@ async def webhook_slack(request: Request):
                 print(f"Received message from Slack user {user_id}: '{user_message}'")
                 
                 response = await airia_client.process_message(
-                    user_message=user_message,
+                    message=user_message,
                     user_id=user_id,
                     platform="slack",
                     conversation_id=channel_id
@@ -146,14 +146,14 @@ async def webhook_whatsapp(request: Request):
             text = message.get("text", {}).get("body", "")
             
             response = await airia_client.process_message(
-                user_message=text,
+                message=text,
                 user_id=from_number,
                 platform="whatsapp",
                 conversation_id=from_number
             )
             
             # Send response via WhatsApp API
-            await send_whatsapp_message(from_number, response.get("text", "Sorry, I had trouble processing that."))
+            # await send_whatsapp_message(from_number, response.get("text", "Sorry, I had trouble processing that."))
             
         return {"status": "ok"}
         
