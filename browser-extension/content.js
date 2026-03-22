@@ -1,9 +1,11 @@
 // content.js
 // List of competitor domains (you can fetch this from backend)
 const COMPETITOR_DOMAINS = [
-  'competitor1.com',
-  'competitor2.com',
-  'competitor3.com'
+  'hubspot',
+  'salesforce',
+  'zoho',
+  'asana',
+  'monday'
 ];
 
 // Check if current page is a competitor
